@@ -1,0 +1,66 @@
+This Piece-Table implementation uses a linked list of nodes/pieces;
+Simply because they're easy to reason about, makes undo/redo easy,
+and means data doesn't have to be contigious.
+Every piece and all other data are put into these blocks, and never move;
+This makes pointer dereferences safe.
+
+All in all, I've used 3 main data structures for my Piece-Table:
+1. Arenas
+2. Free-Lists.
+3. Linked Lists.
+
+A memory block has a header containing four variables:
+1. Pointer to the next block (previous really).
+2. Size of the block (excluding header).
+3. Node index to grow from.
+4. Append index to grow (downwards) from.
+
+# [Next, Size, node_idx, app_idx][ ... ]
+
+To allocate a node, we simply increase the
+node_idx by the size of a node and return the address.
+Same applies to append-only data, we increase the index.
+To prevent these from overlapping,
+append data is grown downwards from the top of the block
+(Done by subtracting the index from the block size).
+
+For example, if we append "One", "Two", "Three", it will look like so:
+# [Header][Node, Node, Node, ...UNUSED... , "ThreeTwoOne"]
+
+This has the benefit of keeping the different data separate and
+zero initialized (besides the block size header).
+
+When a piece is freed, it's simply added to a free-list in the Piece-Table struct.
+When a block is filled up, we can simply allocate a new one,
+and use a free-list to point to the new empty block in the Piece-Table struct.
+
+Freeing all memory is as simple as freeing every block,
+as all our data are contained in them.
+
+To make undo pieces simple, I've opt-ed to use a free-list for those as well.
+They are allocated by growing the node index from blocks as well,
+so blocks contain undo structs, piece structs and append data.
+
+My undo/redo history is linear, as I wasn't sure how else to make it.
+Redo history gets deleted upon new edits,
+maybe some day I'll figure out how to keep redo history.
+
+
+Some things to note:
+1. When a memory block is allocated (block_s),
+   it will allocate at least the size requested or more,
+   this means if t.block is not nil, it is totally safe to
+   allocate data from it without checking for nil pointers.
+
+2. To set max undos, just do 'table.undo_max = 5'.
+   No setters or procedures needed.
+   BUT: Changing this value while editing a file might cause issues.
+        Only change it after 'create' procedure, never after.
+   I don't see a reason to change this if I'm never gonna need it.
+
+3. Currently, this implementation reuses old nodes/pieces fine,
+   but does not reuse stale append-data; I wanna fix that later.
+
+4. If you're appending data after your last insert, this implementation
+   does not currently extend the piece, rather it just naïvely adds
+   another piece.
