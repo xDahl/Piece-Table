@@ -3,7 +3,8 @@ This is my Piece-Table implementation written in Odin,\
 and comes with unlimited linear undo & redo capability\*.\
 **\*: Redo history is lost upon edits;  and default undo history is 100.**
 
-**This code is not finished, and currently lacks saving capability.**
+**This code is not finished, and currently lacks saving capability.\
+However, the code does work from my testing.**
 
 I originally wrote this about a year ago, but in C.\
 I wasn't happy with my C implementation, and decided to try learning Odin\
