@@ -1,14 +1,18 @@
 This Piece-Table implementation uses a linked list of nodes/pieces;
 Simply because they're easy to reason about, makes undo/redo easy,
 and means data doesn't have to be contigious.
-Every piece and all other data are put into these blocks, and never move;
-This makes pointer dereferences safe.
+There is a plan to use a cache for the most recently used piece,
+this should make lookups faster.
+
+Saving procedure is currently not written, as I am not sure about
+how to go about it efficiently.
 
 All in all, I've used 3 main data structures for my Piece-Table:
 1. Arenas
 2. Free-Lists.
 3. Linked Lists.
 
+All pieces and append data are stored in what's referred to as memory blocks.
 A memory block has a header containing four variables:
 1. Pointer to the next block (previous really).
 2. Size of the block (excluding header).
@@ -18,28 +22,31 @@ A memory block has a header containing four variables:
 # [Next, Size, node_idx, app_idx][ ... ]
 
 To allocate a node, we simply increase the
-node_idx by the size of a node and return the address.
-Same applies to append-only data, we increase the index.
+node_idx by the size of a node and return the address (Like an Arena).
+Same applies to append-only data, we increase the index and return.
 To prevent these from overlapping,
 append data is grown downwards from the top of the block
-(Done by subtracting the index from the block size).
+(Done by subtracting the append index from the block size).
 
 For example, if we append "One", "Two", "Three", it will look like so:
 # [Header][Node, Node, Node, ...UNUSED... , "ThreeTwoOne"]
-
 This has the benefit of keeping the different data separate and
 zero initialized (besides the block size header).
 
 When a piece is freed, it's simply added to a free-list in the Piece-Table struct.
-When a block is filled up, we can simply allocate a new one,
-and use a free-list to point to the new empty block in the Piece-Table struct.
+When a new piece is requested, we either increase the index in our memory block,
+or use the free-list of pieces.
+When a block is filled up, we can simply allocate a new one and point to it
+in the Piece-Table structure.
 
 Freeing all memory is as simple as freeing every block,
 as all our data are contained in them.
 
-To make undo pieces simple, I've opt-ed to use a free-list for those as well.
+To make undo pieces simple, I've opt-ed to use a separate free-list for those.
 They are allocated by growing the node index from blocks as well,
-so blocks contain undo structs, piece structs and append data.
+so block node index is grown from undo structs and piece structs.
+Using two different free-lists for undo structs and piece structs allows
+for more efficient use of space, rather than make both structs equal in size.
 
 My undo/redo history is linear, as I wasn't sure how else to make it.
 Redo history gets deleted upon new edits,
@@ -55,7 +62,7 @@ Some things to note:
 2. To set max undos, just do 'table.undo_max = 5'.
    No setters or procedures needed.
    BUT: Changing this value while editing a file might cause issues.
-        Only change it after 'create' procedure, never after.
+        Only change it right after 'create' procedure, never later.
    I don't see a reason to change this if I'm never gonna need it.
 
 3. Currently, this implementation reuses old nodes/pieces fine,
@@ -64,3 +71,10 @@ Some things to note:
 4. If you're appending data after your last insert, this implementation
    does not currently extend the piece, rather it just naïvely adds
    another piece.
+   This makes future append-data reuse easier&safer.
+
+5. My Piece-Table-Block version allows for repeated/compressed data insertions.
+   Basically, if you want to insert GBs of NULL bytes, or any byte sequence
+   repeated, you can do so without taking up much memory.
+   Inserting 'ABC' with a virtal length of 7 means 'ABCABCA' will be inserted;
+   but only 'ABC' will be stored in the append only data.
