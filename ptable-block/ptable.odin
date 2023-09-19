@@ -218,19 +218,20 @@ read :: proc(t : ^table_s, offset : uint, data : []u8) -> (r : uint)
 		max_len : uint = min(p.vlen - begin, length - r)
 
 		if p.off + begin + max_len > p.dlen {
+			start := (begin + p.off) % p.dlen
+			wlen := min(p.dlen - start, p.vlen - begin)
+
 			// TODO: This could be optimized for small data,
 			// as it's not unreasonable that someone would insert
 			// repeated data of length 1; that might be the most
 			// common usecase for this feature.
 			mem.copy_non_overlapping(
 				rawptr(transmute(uintptr)raw_data(data) + uintptr(r))
-				transmute(rawptr)(p.ptr + uintptr(p.off) + uintptr(begin)),
-				int(p.dlen - begin - p.off))
+				transmute(rawptr)(p.ptr + uintptr(start)),
+				int(wlen))
 
-			begin = p.dlen - begin - p.off
-			r += begin
-
-			for k : uint = max_len - begin; k > 0; {
+			r += wlen
+			for k : uint = max_len - begin; max_len > begin && k > 0; {
 				m : uint = min(p.dlen, k)
 				mem.copy_non_overlapping(
 					rawptr(transmute(uintptr)raw_data(data) + uintptr(r)),
