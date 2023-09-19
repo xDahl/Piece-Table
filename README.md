@@ -17,7 +17,9 @@ There are two versions of my Piece-Table:
 The standard one is what you'd expect, you can insert slices of data.\
 The Data-Block versions allows you to insert large amounts of repeating\
 data without taking up much memory.  In short, you can insert a slice\
-and have it be repeated for X bytes without taking up X bytes of memory.
+and have it be repeated for X bytes without taking up X bytes of memory.\
+As an example, you can insert 200GB of NULL bytes,\
+and it will only take up about 50 bytes of memory, and be inserted nearly instantly.
 
 ---
 
@@ -51,10 +53,10 @@ read :: proc(t: ^table_s, offset: uint, data: []u8) -> (r: uint) {...}
     Reads data from Piece-Table into slice,
      * returns bytes read.
 
-redo :: proc(t: ^table_s) {...}
+redo :: proc(t: ^table_s) -> edit_s {...}
     Redos last undo.
 
-undo :: proc(t: ^table_s) {...}
+undo :: proc(t: ^table_s) -> edit_s {...}
     Undoes last change.
 ```
 
