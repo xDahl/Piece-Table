@@ -231,7 +231,7 @@ read :: proc(t : ^table_s, offset : uint, data : []u8) -> (r : uint)
 				int(wlen))
 
 			r += wlen
-			for k : uint = max_len - begin; max_len > begin && k > 0; {
+			for k : uint = max_len - wlen; max_len > wlen && k > 0; {
 				m : uint = min(p.dlen, k)
 				mem.copy_non_overlapping(
 					rawptr(transmute(uintptr)raw_data(data) + uintptr(r)),
