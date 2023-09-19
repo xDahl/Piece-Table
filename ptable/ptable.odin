@@ -223,29 +223,31 @@ read :: proc(t : ^table_s, offset : uint, data : []u8) -> (r : uint)
 }
 
 /* Undoes last change. */
-undo :: proc(t : ^table_s)
+undo :: proc(t : ^table_s) -> edit_s
 {
 	if t.undo == &t.udummy {
-		return
+		return edit_s{0, 0, 0}
 	}
 
 	t.undo = t.undo.next
 	e := table_swap(t, t.undo.prev)
 	t.size -= e.add
 	t.size += e.del
+	return e
 }
 
 /* Redos last undo. */
-redo :: proc(t : ^table_s)
+redo :: proc(t : ^table_s) -> edit_s
 {
 	if t.undo.prev == nil {
-		return
+		return edit_s{0, 0, 0}
 	}
 
 	t.undo = t.undo.prev
 	e := table_swap(t, t.undo)
 	t.size += e.add
 	t.size -= e.del
+	return e
 }
 
 // My pointer swap code here can be a little terse.
