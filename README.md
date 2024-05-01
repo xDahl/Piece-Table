@@ -1,3 +1,9 @@
+## Fun lil note:
+This code is fairly bad.\
+I've learned a lot more about memory allocation strategies and virtual memory since I first wrote this,\
+and if I were to make a piece-table implementation again, I wouldn't do it like this.\
+Still, enjoy.
+
 # Piece-Table implementation in Odin.
 This is my Piece-Table implementation written in Odin,\
 and comes with unlimited linear undo & redo capability\*.\
